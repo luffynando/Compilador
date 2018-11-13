@@ -59,7 +59,6 @@ public class Sintactico {
                 case "fin":
                     break;
                 default:
-                    throw new ParserException(Error(token.token+": "+token.secuencia,"escribe o para o si o lee",token.pos));
             }
         }else if(token.token.equals("identificador")){
             N();
@@ -97,6 +96,7 @@ public class Sintactico {
         }else if(token.token.equals("CuadA")) {
             Emparejar("CuadA");
             Lim();
+            P();
             Emparejar("CuadC");
         }else if(token.token.equals("suma")){
             Emparejar("suma");
@@ -204,36 +204,49 @@ public class Sintactico {
 
     public void N()throws ParserException{
         Emparejar("identificador");
+        V();
         Emparejar("asignacion");
-        Q();
-        P();
+        if (token.token.equals("caracter")){
+            Emparejar("caracter");
+        }else {
+            Lim();
+            P();
+        }
         Emparejar("punto y coma");
         C();
+    }
+
+    public void V()throws ParserException{
+        if (token.token.equals("CuadA")){
+            Emparejar("CuadA");
+            Lim();
+            Emparejar("CuadC");
+        }
     }
 
     public void P()throws ParserException{
         if(token.token.equals("PR")){
             if(token.secuencia.equals("mod")){
                 Emparejar("mod");
-                Q();
+                Lim();
             }
         }else{
             switch (token.token){
                 case "suma":
                         Emparejar("suma");
-                        Q();
+                        Lim();
                     break;
                 case "resta":
                         Emparejar("resta");
-                        Q();
+                        Lim();
                     break;
                 case "division":
                         Emparejar("division");
-                        Q();
+                        Lim();
                     break;
                 case "multiplicacion":
                         Emparejar("multiplicacion");
-                        Q();
+                        Lim();
                     break;
                 default:
                //nada

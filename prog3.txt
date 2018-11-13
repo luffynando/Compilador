@@ -2,6 +2,7 @@ programa pares
 
 constantes num=5
 
+Arreglos
 valores={5, 7, 2, 4, 8}
 
 inicio
