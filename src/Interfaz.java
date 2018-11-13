@@ -110,6 +110,7 @@ public class Interfaz extends JFrame{
 				String[] codigo= textArea.getText().split("\n");
 				if(automataready) {
 				    textSalida.setText("");
+				    automa.resetTokens();
 					for(int i=0;i<codigo.length;i++) {
 					    try {
                             automa.validaSt(codigo[i],(i+1));
@@ -118,7 +119,13 @@ public class Interfaz extends JFrame{
                         }
 					}
 					textSalida.append("\n-------------------------------------------------");
-					
+					Sintactico analsin = new Sintactico(automa);
+                    try {
+                        analsin.Iniciar();
+                        textSalida.append("\nTodo bien");
+                    }catch (ParserException ex){
+                        textSalida.append("\n"+ex.getMessage());
+                    }
 				}
 				else {
 					textSalida.append("\nno hay autómata cargado");

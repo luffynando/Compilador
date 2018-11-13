@@ -3,10 +3,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class AFDVault {
     private ArrayList<String> estados = new ArrayList<>();
@@ -19,7 +16,7 @@ public class AFDVault {
     private int IDENTIFICADOR=-1;
     private Finales edosFinales = new Finales();
     private Boolean ready = false, bandRetroceso=false;
-    ArrayList<Tokens> tokens = new ArrayList<>();
+    LinkedList<Tokens> tokens = new LinkedList<>();
     private String error= "\nError Lexico: ";
 
     public AFDVault(String path) throws IOException, ParserException {
@@ -174,6 +171,20 @@ public class AFDVault {
         Interfaz.textSalida.append("\n"+ edosFinales.toString());
     }
 
+    public void resetTokens(){
+        tokens.clear();
+    }
+
+    public int getSizeofTokens(){
+        return tokens.size();
+    }
+
+    public Tokens getToken(){
+        if (tokens.isEmpty())
+            return null;
+        return tokens.removeFirst();
+    }
+
     public boolean allready(){
         return ready;
     }
@@ -220,10 +231,12 @@ public class AFDVault {
                             Interfaz.textSalida.append("\n {" + "PR" + ", " + isReservada + ", " + "linea: " + linea + "}");
                             //retrocesoI=retrocesoI+(cadena.substring(apuntador,(i+retroceso)).length()-isReservada.length());
                             //apuntador=apuntador+isReservada.length();
+                            tokens.add(new Tokens("PR",isReservada,linea));
 
                         } else {
                             //Interfaz.textSalida.append("\napun:"+apuntador+" retroc: "+ (i+retroceso)+"apun i:"+i);
                             Interfaz.textSalida.append("\n {" + edosFinales.valores.get(edosFinales.estados.indexOf(Integer.parseInt(EdoActual))) + ", " + cadena.substring(apuntador, (i + retroceso)) + ", " + "linea: " + linea + "}");
+                            tokens.add(new Tokens(edosFinales.valores.get(edosFinales.estados.indexOf(Integer.parseInt(EdoActual))),cadena.substring(apuntador, (i + retroceso)),linea));
                             apuntador = (i + retroceso);
                         }
 
@@ -231,7 +244,7 @@ public class AFDVault {
                     } else {
                         //Interfaz.textSalida.append("\napun:"+apuntador+" retroc: "+ (i+retroceso)+"apun i:"+i);
                         Interfaz.textSalida.append("\n {" + edosFinales.valores.get(edosFinales.estados.indexOf(Integer.parseInt(EdoActual))) + ", " + cadena.substring(apuntador, (i + retroceso)) + ", " + "linea: " + linea + "}");
-
+                        tokens.add(new Tokens(edosFinales.valores.get(edosFinales.estados.indexOf(Integer.parseInt(EdoActual))),cadena.substring(apuntador, (i + retroceso)),linea));
                     }
 
                     apuntador = (i + retroceso);
