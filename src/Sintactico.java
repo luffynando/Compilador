@@ -12,8 +12,10 @@ public class Sintactico {
     public void Iniciar() throws ParserException {
         token = lexico.getToken();
         A();
-        if (lexico.getSizeofTokens() != 0) {
-            token = lexico.getToken();
+        if (!token.token.equals("FinFichero")) {
+            if (token.token.equals("PR")){
+                throw new ParserException(Error(token.token+": "+token.secuencia, "fin de fichero", token.pos));
+            }
             throw new ParserException(Error(token.token, "fin de fichero", token.pos));
         }
     }
@@ -56,9 +58,8 @@ public class Sintactico {
                 case "lee":
                         M();
                     break;
-                case "fin":
-                    break;
                 default:
+                    //vacio
             }
         }else if(token.token.equals("identificador")){
             N();
@@ -67,12 +68,15 @@ public class Sintactico {
         }
     }
 
+
+    //Aqui se debe hacer la funcion escribe :3
     public void J()throws ParserException{
         Emparejar("escribe");
         Emparejar("parA");
         U();
         Emparejar("parC");
         Emparejar("punto y coma");
+
         C();
     }
 
@@ -98,10 +102,6 @@ public class Sintactico {
             Lim();
             P();
             Emparejar("CuadC");
-        }else if(token.token.equals("suma")){
-            Emparejar("suma");
-            P();
-            Lim();
         }else{
             //nada
         }
@@ -327,6 +327,9 @@ public class Sintactico {
 
     public void Emparejar(String tok)throws ParserException{
         if (token.token.equals("PR")){
+            if (!token.secuencia.equals(tok)){
+                throw new ParserException(Error(token.token+": "+token.secuencia,tok,token.pos));
+            }
             switch (tok){
                 case "programa":
                     token = lexico.getToken();
@@ -392,6 +395,14 @@ public class Sintactico {
 
     public String Error(String lexema, String esperado,int linea){
         return "Error Sintactico: Encontrado lexema "+lexema+" se esperaba "+ esperado+ " en linea: "+String.valueOf(linea);
+    }
+
+    public static String ErrorSemantico(String lexema, String esperado,int linea){
+        return "Error Semantico: "+lexema+" "+esperado+" en linea "+String.valueOf(linea);
+    }
+
+    public void funcionEscribe(String cadena) {
+        Interfaz.textSalida.append("\n funcion escribe dice: "+ cadena);
     }
 
 

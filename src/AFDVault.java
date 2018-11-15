@@ -14,6 +14,7 @@ public class AFDVault {
     private ArrayList<String> palabrasReservadas= new  ArrayList<>();
     private String inicial= "";
     private int IDENTIFICADOR=-1;
+    private int maxl = 0;
     private Finales edosFinales = new Finales();
     private Boolean ready = false, bandRetroceso=false;
     LinkedList<Tokens> tokens = new LinkedList<>();
@@ -179,10 +180,18 @@ public class AFDVault {
         return tokens.size();
     }
 
+    public boolean isEmpty(){
+        return tokens.isEmpty();
+    }
+
     public Tokens getToken(){
         if (tokens.isEmpty())
-            return null;
+            return new Tokens("FinFichero","FinFichero",maxl);
         return tokens.removeFirst();
+    }
+
+    public void setMaxLineas(int maxLineas){
+        maxl = maxLineas;
     }
 
     public boolean allready(){

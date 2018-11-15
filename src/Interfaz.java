@@ -111,21 +111,19 @@ public class Interfaz extends JFrame{
 				if(automataready) {
 				    textSalida.setText("");
 				    automa.resetTokens();
-					for(int i=0;i<codigo.length;i++) {
-					    try {
-                            automa.validaSt(codigo[i],(i+1));
-                        }catch (ParserException ex){
-					        textSalida.append("\n"+ex.getMessage());
-                        }
-					}
-					textSalida.append("\n-------------------------------------------------");
-					Sintactico analsin = new Sintactico(automa);
                     try {
+                        automa.setMaxLineas(codigo.length);
+					    for(int i=0;i<codigo.length;i++) {
+                            automa.validaSt(codigo[i],(i+1));
+					    }
+                        textSalida.append("\n-------------------------------------------------");
+                        Sintactico analsin = new Sintactico(automa);
                         analsin.Iniciar();
                         textSalida.append("\nTodo bien");
                     }catch (ParserException ex){
-                        textSalida.append("\n"+ex.getMessage());
-                    }
+                            textSalida.append("\n"+ex.getMessage());
+					}
+
 				}
 				else {
 					textSalida.append("\nno hay autómata cargado");
