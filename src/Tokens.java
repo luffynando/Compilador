@@ -5,8 +5,8 @@ public class Tokens {
 
     public Tokens(String token, String secuencia, int pos){
         super();
-        this.token = token;
-        this.secuencia = secuencia;
+        this.token = token.trim();
+        this.secuencia = secuencia.trim();
         this.pos = pos;
     }
 }

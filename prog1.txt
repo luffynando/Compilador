@@ -8,8 +8,8 @@ INICIO
     ESCRIBE('A');
     ESCRIBE('=');
     SI (DATOS.LENGTH >1) ENTONCES
-        PARA var=1 HASTA datos.LENGTH PASO +1 HACER
-            ESCRIBE(DATOS[i]);
+        PARA var=1 HASTA DATOS.LENGTH PASO +1 HACER
+            ESCRIBE(DATOS[2]);
         FIN
     FIN
 FIN

@@ -4,28 +4,30 @@ programa pares
 
     Arreglos
     valores={5, 7, 2, 4, 8}
+    datos={'a','b','c','d','e'}
 
 inicio
     car='1';
-    lee(car);
-    lim=valores.length-1;
-    si (car=='p') entonces
-        para var=lim hasta 0 paso -1 hacer
-            par=valores[var] mod 2;
-            si (par!=0) entonces
-                valores[var]=valores[var]+1;
-            fin
-        fin
-    sino
-        si (car=='i') entonces
-            para var=lim hasta 0 paso -1 hacer
-                impar=valores[var] mod 2;
-                si (par==0) entonces
-                    valores[var]=valores[var]+1;
-                fin
-            fin
-        sino
-            Escribe('0');
-        fin
+    escribe(datos[0]);
+    escribe(datos[1]);
+    escribe(datos[2]);
+    escribe(datos[3]);
+    escribe(datos[4]);
+    datos[1] = datos[valores[2]];
+    escribe(datos[1]);
+    test= valores.length;
+    escribe(test);
+    otro= datos.length;
+    escribe(otro);
+    escribe(datos.length);
+    si (5 == num)entonces
+       escribe('H');
+      escribe('o');
+      escribe('l');
+      escribe('a');
+      escribe('M');
+      escribe('i');
+      escribe('s');
+      escribe('a');
     fin
 fin

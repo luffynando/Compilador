@@ -1,32 +1,47 @@
-import java.util.EnumMap;
+import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class Sintactico {
     private AFDVault lexico;
     private Tokens token;
-    private String preanalisis;
+    private Semantico semantico;
+    private Tokens ultimoToken;
+    private LinkedList<Tokens> estadoPrev;
+    private LinkedList<Tokens> estadoActual;
+    private int indiceprev;
+    private int indiceactual;
+    private boolean ready;
+    private boolean copy;
 
     public Sintactico(AFDVault lexico) {
         this.lexico = lexico;
+        semantico= new Semantico();
+        estadoPrev = new LinkedList<>();
+        estadoActual= new LinkedList<>();
+        copy= false;
+        ready= false;
     }
 
     public void Iniciar() throws ParserException {
         token = lexico.getToken();
+        ultimoToken = token;
         A();
         if (!token.token.equals("FinFichero")) {
-            if (token.token.equals("PR")){
-                throw new ParserException(Error(token.token+": "+token.secuencia, "fin de fichero", token.pos));
-            }
-            throw new ParserException(Error(token.token, "fin de fichero", token.pos));
+            throw new ParserException(Error(token.secuencia, "fin de fichero", token.pos));
         }
     }
 
     public void A() throws ParserException {
         Emparejar("programa");
         Emparejar("identificador");
+        semantico.nombrePrograma = ultimoToken.secuencia;
         B();
+        //semantico.printtabla();
         Emparejar("inicio");
         C();
         Emparejar("fin");
+        //semantico.printtabla();
+
     }
 
     public void B() throws ParserException {
@@ -47,13 +62,13 @@ public class Sintactico {
         if (token.token.equals("PR")){
             switch (token.secuencia){
                 case "escribe":
-                        J();
+                        J(); //Funcionando al 100 papu
                     break;
                 case "para":
                         K();
                     break;
                 case "si":
-                        L();
+                        L(); //Funcionando al 100 papu
                     break;
                 case "lee":
                         M();
@@ -62,7 +77,7 @@ public class Sintactico {
                     //vacio
             }
         }else if(token.token.equals("identificador")){
-            N();
+            N(); //Funcionando al 100 papu
         }else{
             //vacio
         }
@@ -73,89 +88,313 @@ public class Sintactico {
     public void J()throws ParserException{
         Emparejar("escribe");
         Emparejar("parA");
-        U();
+        Variables aux = new Variables();
+        U(aux);
         Emparejar("parC");
         Emparejar("punto y coma");
-
+        funcionEscribe(aux.value);
         C();
     }
 
-    public void U()throws ParserException{
-        Q();
+    public void U(Variables aux)throws ParserException{
+        Q(aux);
     }
 
-    public void Q()throws ParserException{
+    public void Q(Variables aux)throws ParserException{
         if(token.token.equals("identificador")){
             Emparejar("identificador");
-            T();
+            Variables otra = semantico.getByName(ultimoToken.secuencia);
+            if (otra == null){
+                throw new ParserException(ErrorSemantico(ultimoToken.secuencia,"La variable no ha sido inicializada",ultimoToken.pos));
+            }
+            T(otra);
+            //Verificar arreglo
+            if(otra.valorsel != -1){
+                aux.value = String.valueOf(otra.valorsel);
+            }else{
+                if(!otra.charsel.equals("")){
+                    aux.value = otra.charsel;
+                }else{
+                    if(otra.isArreglo){
+                        throw new ParserException(ErrorSemantico(otra.nombre,"No se puede asignar un arreglo",ultimoToken.pos));
+                    }else{
+                        aux.value = otra.value;
+                        aux.tipo = otra.tipo;
+                    }
+
+                }
+            }
         }else {
-            Valor();
+            Valor(aux);
         }
     }
 
-    public void T()throws ParserException{
+    public void T(Variables aux)throws ParserException{
         if (token.token.equals("punto")){
             Emparejar("punto");
             Emparejar("length");
+            if(aux.isArreglo){
+                aux.valorsel = aux.length();
+            }else{
+                throw new ParserException(ErrorSemantico(aux.nombre,"No se puede aplicar .length, no es un arreglo",ultimoToken.pos));
+            }
         }else if(token.token.equals("CuadA")) {
+            if(!aux.isArreglo){
+                throw new ParserException(ErrorSemantico(aux.nombre,"Arreglo no declarado",token.pos));
+            }
             Emparejar("CuadA");
-            Lim();
-            P();
+            Variables otro = new Variables();
+            Lim(otro);
+            P(otro);
+            if(otro.valorsel>=aux.length()){
+                throw new ParserException(ErrorSemantico(aux.nombre,"Indice fuera del rango del arreglo",ultimoToken.pos));
+            }
+            if(otro.tipo.equals("char")){
+                throw new ParserException(ErrorSemantico(aux.nombre,"Se esperaba un entero pero recibio caracter",ultimoToken.pos));
+            }else{
+                if(aux.tipo.equals("char")){
+                    aux.charsel = aux.getValuebyIndex(otro.valorsel);
+                }
+                aux.valorsel = Integer.parseInt(aux.getValuebyIndex(otro.valorsel));
+            }
             Emparejar("CuadC");
         }else{
             //nada
         }
     }
 
-    public void Lim()throws ParserException{
+    public void Lim(Variables aux)throws ParserException{
         if(token.token.equals("entero")){
             Emparejar("entero");
+            aux.valorsel = Integer.parseInt(ultimoToken.secuencia);
         }else if(token.token.equals("identificador")){
+            //variable, constante o arreglo.
             Emparejar("identificador");
-            T();
+            Variables otra = semantico.getByName(ultimoToken.secuencia);
+            if (otra == null){
+                throw new ParserException(ErrorSemantico(ultimoToken.secuencia,"La variable no ha sido inicializada",ultimoToken.pos));
+            }
+            T(otra);
+            //Si entro un arreglo con caracteres trae un caracter seleccionado.
+            //Si entro un arreglo con enteros trae un caracter seleccionado.
+            //en otro caso es una variable entonces obtenemos el valor.
+            if(otra.valorsel != -1){
+                aux.valorsel = otra.valorsel;
+            }else{
+                if(!otra.charsel.equals("")){
+                    aux.charsel = otra.charsel;
+                }else{
+                    if(otra.isArreglo){
+                        throw new ParserException(ErrorSemantico(otra.nombre,"No se puede asignar un arreglo",ultimoToken.pos));
+                    }
+                    if(otra.tipo.equals("int")){
+                        aux.valorsel= Integer.parseInt(otra.value);
+                        aux.tipo = "int";
+                    }else{
+                        aux.charsel= otra.value;
+                        aux.tipo = "char";
+                    }
+                }
+            }
+
         }else{
-            throw new ParserException(Error(token.token, "entero o identificador", token.pos));
+            throw new ParserException(Error(token.secuencia, "entero o identificador", token.pos));
         }
     }
 
     public void K()throws ParserException{
         Emparejar("para");
         Emparejar("identificador");
+        Variables aux= semantico.getByName(ultimoToken.secuencia);
+        if(aux == null){
+            aux= new Variables();
+            aux.nombre= ultimoToken.secuencia;
+            aux.tipo = "int";
+            aux.pos = ultimoToken.pos;
+        }
         Emparejar("asignacion");
-        Lim();
+        Variables otro = new Variables();
+        Lim(otro);
+        if(otro.valorsel != -1){
+            aux.value = String.valueOf(otro.valorsel);
+        }else {
+            if(!otro.charsel.equals("")){
+                throw new ParserException(ErrorSemantico(aux.nombre,"Se esperaba un entero pero se recibio un caracter",aux.pos));
+            }
+            if(otro.tipo.equals("char")){
+                throw new ParserException(ErrorSemantico(aux.nombre,"Se esperaba un entero pero se recibio un caracter",aux.pos));
+            }
+            aux.value= otro.value;
+        }
+        String res= semantico.intentaagregar(aux);
+        if(!res.equals("")){
+            throw new ParserException(ErrorSemantico("",res,aux.pos));
+        }
+        int inicio= Integer.parseInt(aux.value);
         Emparejar("hasta");
-        Lim();
+        Variables limite = new Variables();
+        Lim(limite);
+        int limitepara=0;
+        if(limite.valorsel != -1){
+            limitepara= limite.valorsel;
+        }else {
+            if(!otro.charsel.equals("")){
+                throw new ParserException(ErrorSemantico(aux.nombre,"Se esperaba un entero pero se recibio un caracter",aux.pos));
+            }
+            if(otro.tipo.equals("char")){
+                throw new ParserException(ErrorSemantico(aux.nombre,"Se esperaba un entero pero se recibio un caracter",aux.pos));
+            }
+            limitepara= Integer.parseInt(otro.value);
+        }
         Emparejar("paso");
-        Indec();
+        String simbolo="";
+        Variables incremento=new Variables();
+        simbolo= Indec(incremento);
         Emparejar("hacer");
-        C();
+        //reglas para verificar un correcto for
+        if(inicio != limitepara) {
+            copy = true;
+            C();
+            if (simbolo.equals("+")) {
+                inicio = inicio + incremento.valorsel;
+            } else {
+                inicio = inicio - incremento.valorsel;
+            }
+            estadoActual.add(token);
+            copy = false;
+            ready = true;
+            if (!estadoActual.isEmpty()){
+                //indiceactual = 0;
+                LinkedList<Tokens> auxs=(LinkedList<Tokens>) estadoActual.clone();
+                if(simbolo.equals("+")){
+                    for(int i=inicio; i<=limitepara; i=i+incremento.valorsel){
+                        estadoActual = (LinkedList<Tokens>) auxs.clone();
+                        token= estadoActual.removeFirst();
+                        System.out.println(i);
+                        C();
+                    }
+                }else{
+                    for(int i= inicio;i>=limitepara; i=i-incremento.valorsel){
+                        estadoActual = (LinkedList<Tokens>) auxs.clone();
+                        token= estadoActual.removeFirst();
+                        System.out.println(i);
+                        C();
+                    }
+                }
+                System.out.println("Salio del ciclo");
+            }
+            ready=false;
+        }else{
+            recorrerhastaelfin(false);
+        }
         Emparejar("fin");
         C();
 
     }
 
-    public void Indec()throws ParserException{
+    public String Indec(Variables aux)throws ParserException{
+        Variables otro= new Variables();
+        String ret="";
         if(token.token.equals("suma")){
             Emparejar("suma");
-            Lim();
+            ret = ultimoToken.secuencia;
+            Lim(otro);
         }else if(token.token.equals("resta")){
             Emparejar("resta");
-            Lim();
+            ret=  ultimoToken.secuencia;
+            Lim(otro);
         }else{
-            throw new ParserException(Error(token.token, "+ o -", token.pos));
+            throw new ParserException(Error(token.secuencia, "+ o -", token.pos));
         }
+        if(otro.valorsel != -1){
+            aux.valorsel= otro.valorsel;
+        }else {
+            if(!otro.charsel.equals("")){
+                throw new ParserException(ErrorSemantico("","Se esperaba un entero pero se recibio un caracter",ultimoToken.pos));
+            }
+            if(otro.tipo.equals("char")){
+                throw new ParserException(ErrorSemantico("","Se esperaba un entero pero se recibio un caracter",ultimoToken.pos));
+            }
+            aux.valorsel= Integer.parseInt(otro.value);
+        }
+        return ret;
     }
 
     public void L()throws ParserException{
         Emparejar("si");
         Emparejar("parA");
-        Q();
+        Variables c1 = new Variables();
+        Q(c1);
         Comp();
-        Q();
+        String operador= ultimoToken.secuencia;
+        Variables c2= new Variables();
+        Q(c2);
+        boolean flag= false;
+        int aux1, aux2;
+        if(mismoTipo(c1,c2)){
+            switch (operador){
+                case "==":
+                    if (c1.tipo.equals("char")){
+                        flag= c1.value.equals(c2.value);
+                    }else{
+                        aux1= Integer.parseInt(c1.value);
+                        aux2= Integer.parseInt(c2.value);
+                        flag= aux1 == aux2;
+                    }
+                    break;
+                case "<=":
+                    if(c1.tipo.equals("char")){
+                        throw new ParserException(ErrorSemantico("","Operador <= no se puede aplicar a variables de tipo caracter",ultimoToken.pos));
+                    }
+                    aux1= Integer.parseInt(c1.value);
+                    aux2= Integer.parseInt(c2.value);
+                    flag= aux1 <= aux2;
+                    break;
+                case "<":
+                    if(c1.tipo.equals("char")){
+                        throw new ParserException(ErrorSemantico("","Operador < no se puede aplicar a variables de tipo caracter",ultimoToken.pos));
+                    }
+                    aux1= Integer.parseInt(c1.value);
+                    aux2= Integer.parseInt(c2.value);
+                    flag = aux1<aux2;
+                    break;
+                case ">=":
+                    if(c1.tipo.equals("char")){
+                        throw new ParserException(ErrorSemantico("","Operador >= no se puede aplicar a variables de tipo caracter",ultimoToken.pos));
+                    }
+                    aux1= Integer.parseInt(c1.value);
+                    aux2= Integer.parseInt(c2.value);
+                    flag= aux1 >= aux2;
+                    break;
+                case ">":
+                    if(c1.tipo.equals("char")){
+                        throw new ParserException(ErrorSemantico("","Operador > no se puede aplicar a variables de tipo caracter",ultimoToken.pos));
+                    }
+                    aux1= Integer.parseInt(c1.value);
+                    aux2= Integer.parseInt(c2.value);
+                    flag= aux1 > aux2;
+                    break;
+                case "!=":
+                    if (c1.tipo.equals("char")){
+                        flag= !c1.value.equals(c2.value);
+                    }else{
+                        aux1= Integer.parseInt(c1.value);
+                        aux2= Integer.parseInt(c2.value);
+                        flag= aux1 != aux2;
+                    }
+                    break;
+            }
+        }else{
+            throw new ParserException(ErrorSemantico("","La condicional solo puede aplicarse en variables o constantes del mismo tipo",ultimoToken.pos));
+        }
         Emparejar("parC");
         Emparejar("entonces");
-        C();
-        O();
+        if(flag){
+            C();
+        }else{
+            recorrerhastaelfin(true);
+        }
+        O(flag);
         Emparejar("fin");
         C();
 
@@ -182,14 +421,18 @@ public class Sintactico {
                 Emparejar("diferente");
                 break;
             default:
-                throw new ParserException(Error(token.token, "simbolo relacional o de igualdad", token.pos));
+                throw new ParserException(Error(token.secuencia, "simbolo relacional o de igualdad", token.pos));
         }
     }
 
-    public void O()throws ParserException{
+    public void O(boolean flag)throws ParserException{
         if(token.secuencia.equals("sino")){
             Emparejar("sino");
-            C();
+            if (!flag) {
+                C();
+            }else{
+                recorrerhastaelfin(false);
+            }
         }
     }
 
@@ -204,49 +447,149 @@ public class Sintactico {
 
     public void N()throws ParserException{
         Emparejar("identificador");
-        V();
+        Variables aux = semantico.getByName(ultimoToken.secuencia);
+        if(aux == null){
+          aux = new Variables();
+          aux.nombre = ultimoToken.secuencia;
+          aux.pos = ultimoToken.pos;
+        }else{
+            aux.pos = ultimoToken.pos;
+        }
+        Variables otro = new Variables();
+        V(otro);
+        if(aux.isArreglo){
+            if (otro.valorsel != -1){
+                aux.indexsel = otro.valorsel;
+            }else{
+                throw new ParserException(ErrorSemantico(aux.nombre,"Se esta intentando reasignar un arreglo definido",aux.pos));
+            }
+        }
+        //System.out.println(aux.indexsel);
         Emparejar("asignacion");
         if (token.token.equals("caracter")){
             Emparejar("caracter");
+            if(aux.isArreglo){
+                if(aux.tipo.equals("int")){
+                    throw new ParserException(ErrorSemantico(aux.nombre,"Se esta intentando modificar un caracter a un arreglo de enteros",ultimoToken.pos));
+                }else{
+                    aux.updatevalue(aux.indexsel,ultimoToken.secuencia);
+                }
+            }else{
+                aux.value= ultimoToken.secuencia;
+                aux.tipo= "char";
+            }
         }else {
-            Lim();
-            P();
+            Variables otro2 = new Variables();
+            Lim(otro2);
+            //int
+            //car
+            //variable
+            P(otro2);
+            //int -1
+            if(otro2.valorsel != -1){
+                if(aux.isArreglo){
+                    String res= aux.updatevalue(aux.indexsel,String.valueOf(otro2.valorsel));
+                    if(!res.equals("")){
+                        throw new ParserException(ErrorSemantico(aux.nombre,res,aux.pos));
+                    }
+                }else{
+                    aux.value= String.valueOf(otro2.valorsel);
+                    aux.tipo= "int";
+                }
+            }else{
+                String response;
+                if(!otro2.charsel.equals("")){
+                    response = otro2.charsel;
+                }else{
+                    response = otro2.value;
+                }
+                if(aux.isArreglo){
+                    String respuesta = aux.updatevalue(aux.indexsel,response);
+                    if(!respuesta.equals("")){
+                        throw new ParserException(ErrorSemantico(aux.nombre,respuesta,aux.pos));
+                    }
+                }else{
+                    if(otro2.tipo.equals("int")){
+                        aux.tipo= "int";
+                    }else{
+                        aux.tipo= "char";
+                    }
+                    aux.value= response;
+                }
+            }
         }
         Emparejar("punto y coma");
+        String res = semantico.saltaArregloAdd(aux);
+        if(!res.equals("")){
+            throw new ParserException(ErrorSemantico(aux.nombre,res,aux.pos));
+        }
         C();
     }
 
-    public void V()throws ParserException{
+    public void V(Variables aux)throws ParserException{
         if (token.token.equals("CuadA")){
             Emparejar("CuadA");
-            Lim();
+            //Espera el indice selecionado
+            Variables conseguir= new Variables();
+            Lim(conseguir);
+            if(conseguir.valorsel != -1){
+                aux.valorsel = conseguir.valorsel;
+            }else {
+                if(!conseguir.charsel.equals("")){
+                    throw new ParserException(ErrorSemantico(aux.nombre,"Se esperaba un entero pero se recibio un caracter",aux.pos));
+                }
+                if(conseguir.tipo.equals("char")){
+                    throw new ParserException(ErrorSemantico(aux.nombre,"Se esperaba un entero pero se recibio un caracter",aux.pos));
+                }
+                aux.valorsel= Integer.parseInt(conseguir.value);
+            }
             Emparejar("CuadC");
         }
     }
 
-    public void P()throws ParserException{
+    public void P(Variables aux)throws ParserException{
+        Variables otro = new Variables();
         if(token.token.equals("PR")){
             if(token.secuencia.equals("mod")){
+                if(aux.tipo.equals("char")){
+                    throw new ParserException(ErrorSemantico(aux.nombre,"Solo se puede realizar operaciones sobre numeros enteros",aux.pos));
+                }
                 Emparejar("mod");
-                Lim();
+                Lim(otro);
+                validaOperacion(otro);
+                aux.valorsel= aux.valorsel % otro.valorsel;
             }
         }else{
             switch (token.token){
                 case "suma":
+                        if(aux.tipo.equals("char")){
+                            throw new ParserException(ErrorSemantico(aux.nombre,"Solo se puede realizar operaciones sobre numeros enteros",aux.pos));
+                        }
                         Emparejar("suma");
-                        Lim();
+                        Lim(otro);
+                        validaOperacion(otro);
+                        aux.valorsel = aux.valorsel + otro.valorsel;
                     break;
                 case "resta":
                         Emparejar("resta");
-                        Lim();
+                        Lim(otro);
+                        validaOperacion(otro);
+                        aux.valorsel = aux.valorsel - otro.valorsel;
+                        if(aux.valorsel <0 ){
+                            throw new ParserException(ErrorSemantico(aux.nombre,"la resta no puede efectuarse pues obtiene un indice negativo",ultimoToken.pos));
+                        }
                     break;
                 case "division":
                         Emparejar("division");
-                        Lim();
+                        Lim(otro);
+                        validaOperacion(otro);
+                        aux.valorsel = aux.valorsel / otro.valorsel;
                     break;
                 case "multiplicacion":
                         Emparejar("multiplicacion");
-                        Lim();
+                        Lim(otro);
+                        validaOperacion(otro);
+                        aux.valorsel = aux.valorsel * otro.valorsel;
                     break;
                 default:
                //nada
@@ -254,19 +597,35 @@ public class Sintactico {
         }
     }
 
+
+
     public void Cons()throws ParserException{
+        Variables aux = new Variables();
+        aux.isConstante = true;
         Emparejar("identificador");
+        aux.nombre = ultimoToken.secuencia;
+        aux.pos = ultimoToken.pos;
         Emparejar("asignacion");
-        Valor();
+        Valor(aux);
+        if(!semantico.add(aux)){
+            throw new ParserException(ErrorSemantico(aux.nombre,"la constante ya esta definida",aux.pos));
+        }
         F();
     }
 
     public void Arreg()throws ParserException{
+        Variables aux= new Variables();
+        aux.isArreglo = true;
         Emparejar("identificador");
+        aux.nombre = ultimoToken.secuencia;
+        aux.pos= ultimoToken.pos;
         Emparejar("asignacion");
         Emparejar("corchA");
-        G();
+        G(aux);
         Emparejar("corchC");
+        if(!semantico.add(aux)){
+            throw new ParserException(ErrorSemantico(aux.nombre,"el arreglo ya esta definido",aux.pos));
+        }
         H();
     }
 
@@ -281,116 +640,286 @@ public class Sintactico {
 
     public void H()throws ParserException{
         if(token.token.equals("identificador")){
+            Variables aux= new Variables();
+            aux.isArreglo = true;
             Emparejar("identificador");
+            aux.nombre = ultimoToken.secuencia;
+            aux.pos= ultimoToken.pos;
             Emparejar("asignacion");
             Emparejar("corchA");
-            G();
+            G(aux);
             Emparejar("corchC");
+            if(!semantico.add(aux)){
+                throw new ParserException(ErrorSemantico(aux.nombre,"el arreglo ya esta definido",aux.pos));
+            }
             H();
         }
     }
 
-    public void G()throws ParserException{
-        Valor();
-        I();
+    public void G(Variables aux)throws ParserException{
+        Valor(aux);
+        I(aux);
     }
 
-    public void I()throws ParserException{
+    public void I(Variables aux)throws ParserException{
         if(token.token.equals("coma")) {
             Emparejar("coma");
-            Valor();
-            I();
+            Valor(aux);
+            I(aux);
         }
     }
 
     public void F()throws ParserException{
         if(token.token.equals("identificador")){
+            Variables aux= new Variables();
+            aux.isConstante = true;
             Emparejar("identificador");
+            aux.nombre = ultimoToken.secuencia;
             Emparejar("asignacion");
-            Valor();
+            Valor(aux);
+            if(!semantico.add(aux)){
+                throw new ParserException(ErrorSemantico(aux.nombre,"la constante ya esta definida",aux.pos));
+            }
             F();
         }
     }
 
-    public void Valor()throws ParserException{
+    public void Valor(Variables aux)throws ParserException{
         switch (token.token){
             case "entero":
                     Emparejar("entero");
+                    if(aux.isArreglo){
+                        aux.tipo = aux.tipo.equals("")? "int": aux.tipo;
+                        String response= aux.addNewValortoArreglo(ultimoToken.secuencia);
+                        if(!response.equals("")){
+                            throw new ParserException(ErrorSemantico(aux.nombre,response,aux.pos));
+                        }
+                    }else {
+                        aux.tipo = "int";
+                        aux.value = ultimoToken.secuencia;
+                    }
                 break;
             case "caracter":
                     Emparejar("caracter");
+                    if(aux.isArreglo){
+                        aux.tipo= aux.tipo.equals("") ? "char" : aux.tipo;
+                        String res= aux.addNewValortoArreglo(ultimoToken.secuencia);
+                        if(!res.equals("")){
+                            throw new ParserException(ErrorSemantico(aux.nombre,res,aux.pos));
+                        }
+                    }else{
+                        aux.tipo = "char";
+                        aux.value = ultimoToken.secuencia;
+                    }
                 break;
                 default:
-                    throw new ParserException(Error(token.token,"entero o caracter",token.pos));
+                    throw new ParserException(Error(token.secuencia,"entero o caracter",token.pos));
         }
     }
 
     public void Emparejar(String tok)throws ParserException{
+        ultimoToken = token;
+        if(copy){
+            //System.out.println(token.secuencia);
+            estadoActual.add(token);
+        }
+        if(ready){
+            System.out.println(token.secuencia);
+        }
         if (token.token.equals("PR")){
             if (!token.secuencia.equals(tok)){
-                throw new ParserException(Error(token.token+": "+token.secuencia,tok,token.pos));
+                throw new ParserException(Error(token.secuencia,tok,token.pos));
             }
             switch (tok){
                 case "programa":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else{
+                        token = lexico.getToken();
+                    }
                     break;
                 case "inicio":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "fin":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "constantes":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "arreglos":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "para":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "hasta":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "paso":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "hacer":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "si":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "entonces":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "sino":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "escribe":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "lee":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "mod":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 case "length":
-                    token = lexico.getToken();
+                    if(ready){
+                        token = estadoActual.removeFirst();
+                    }else {
+                        token = lexico.getToken();
+                    }
                     break;
                 default:
-                    throw new ParserException(Error(token.token+": "+token.secuencia,tok,token.pos));
+                    throw new ParserException(Error(token.secuencia,tok,token.pos));
             }
         }else{
             if(token.token.equals(tok)){
-                token = lexico.getToken();
+                if(ready){
+                    token = estadoActual.removeFirst();
+                }else {
+                    token = lexico.getToken();
+                }
             }else{
-                throw new ParserException(Error(token.token,tok,token.pos));
+                throw new ParserException(Error(token.secuencia,tok,token.pos));
             }
         }
     }
 
+    //Metodos del semantico que son usados aqui:
+    public void validaOperacion(Variables aux) throws ParserException{
+        if(aux.valorsel == -1){
+            if(!aux.charsel.equals("")){
+                throw new ParserException(ErrorSemantico(aux.nombre,"Solo se puede realizar operaciones sobre numeros enteros",aux.pos));
+            }
+            if(aux.tipo.equals("char")){
+                throw new ParserException(ErrorSemantico(aux.nombre,"Solo se puede realizar operaciones sobre numeros enteros",aux.pos));
+            }
+            aux.valorsel = Integer.parseInt(aux.value);
+        }
+    }
+
+    public void recorrerhastaelfin(boolean issino)throws ParserException{
+        boolean flag=true;
+        int needfin= 0;
+        while(flag) {
+            if(token.token.equals("PR")){
+                /* Posibles casos:
+                para fin
+                inicio fin
+                si fin
+                si sino fin
+                */
+                if(token.secuencia.equals("para")){
+                    needfin++;
+                }
+                if(token.secuencia.equals("si")){
+                    needfin++;
+                }
+                if(token.secuencia.equals("sino")){
+                    if(issino){
+                        if(needfin == 0){
+                            flag = false;
+                        }
+                    }
+                }
+                if(token.secuencia.equals("fin")){
+                    if(needfin == 0) {
+                        flag = false;
+                    }else{
+                        needfin--;
+                    }
+
+                }
+            }else{
+                if(token.token.equals("FinFichero")){
+                    throw new ParserException(Error(token.secuencia,"Fin o Sino",token.pos));
+                }
+            }
+            if(flag){
+                token=lexico.getToken();
+            }
+        }
+    }
+
+    public boolean mismoTipo(Variables t1, Variables t2){
+        System.out.println(t1.tipo+" "+t2.tipo);
+        return t1.tipo.equals(t2.tipo);
+    }
+    //Fin Metodos
 
 
     public String Error(String lexema, String esperado,int linea){
