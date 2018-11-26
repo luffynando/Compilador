@@ -25,21 +25,22 @@ public class InterfazCompilado extends JFrame
 		this.setLayout(new GridBagLayout());
 		 c.insets = new Insets(3,3,3,3);
 		 c.weightx=0.5;
+		 c.weighty=1;
 		 c.fill = GridBagConstraints.BOTH;
 		 c.gridx = 0;
 		 c.gridy = 0;
 		 
 		 
 		 variables= new JPanel();
-		 variables.setLayout(new BoxLayout(variables, BoxLayout.PAGE_AXIS));
+		 variables.setLayout(new BoxLayout(variables, BoxLayout.PAGE_AXIS) );
 		 JScrollPane scroll = new JScrollPane(variables);
 		 JTabbedPane pestana = new JTabbedPane();
-		 pestana.add("Variables", scroll);
+		 pestana.add("Variables",scroll);
 		 variables.setVisible(true);
 		 
 		 this.add(pestana,c);
 		 
-		 cons= new JTextArea();
+		cons= new JTextArea();
 		
 		 JTabbedPane pestana2 = new JTabbedPane();
 		 consola= new JPanel();
@@ -72,7 +73,8 @@ public class InterfazCompilado extends JFrame
 		// Initializing the JTable 
 		dtm= new DefaultTableModel(datos,columnNames);
 		table = new JTable(dtm); 
-		table.setBounds(30, 40, 200, 300); 
+		//table.setBounds(30, 40, 200, 300); 
+		
 		
 		JScrollPane sp = new JScrollPane(table); 
 		

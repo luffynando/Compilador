@@ -499,7 +499,7 @@ public class Sintactico {
             }else{
                 aux.value= ultimoToken.secuencia;
                 aux.tipo= "char";
-                semantico.variablesInterfaz("Variable de tipo char agregada en:"+ultimoToken.pos);
+                //semantico.variablesInterfaz("Variable de tipo char agregada en:"+ultimoToken.pos);
             }
         }else {
             Variables otro2 = new Variables();
@@ -512,14 +512,14 @@ public class Sintactico {
             if(otro2.valorsel != -1){
                 if(aux.isArreglo){
                     String res= aux.updatevalue(aux.indexsel,String.valueOf(otro2.valorsel));
-                    semantico.arreglosInterfaz("Arreglo modificado en "+ultimoToken.pos);
+                   // semantico.arreglosInterfaz("Arreglo modificado en "+ultimoToken.pos);
                     if(!res.equals("")){
                         throw new ParserException(ErrorSemantico(aux.nombre,res,aux.pos));
                     }
                 }else{
                     aux.value= String.valueOf(otro2.valorsel);
                     aux.tipo= "int";
-                    semantico.variablesInterfaz("Variable de tipo char agregada en:"+ultimoToken.pos);
+                    //semantico.variablesInterfaz("Variable de tipo char agregada en:"+ultimoToken.pos);
                 }
             }else{
                 String response;
