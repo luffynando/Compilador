@@ -1,10 +1,12 @@
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import javax.swing.JOptionPane;
+
 public class Sintactico {
     private AFDVault lexico;
     private Tokens token;
-    private Semantico semantico;
+    public static Semantico semantico;
     private Tokens ultimoToken;
     private LinkedList<Tokens> estadoPrev;
     private LinkedList<Tokens> estadoActual;
@@ -49,14 +51,21 @@ public class Sintactico {
             if (token.secuencia.equals("constantes")) {
                 Emparejar("constantes");
                 Cons();
+               semantico.constantesInterfaz();
                 D();
             }
             if (token.secuencia.equals("arreglos")) {
                 Emparejar("arreglos");
                 Arreg();
+                semantico.arreglosInterfaz("arreglo agregado en "+ ultimoToken.pos);
             }
         }
     }
+    
+   
+    
+    
+    
 
     public void C() throws ParserException {
         if (token.token.equals("PR")){
@@ -443,9 +452,11 @@ public class Sintactico {
     }
 
     public void M()throws ParserException{
+    	String aux= new String();
         Emparejar("lee");
         Emparejar("parA");
         Emparejar("identificador");
+        aux=JOptionPane.showInputDialog("de valor para la variable "+ultimoToken.secuencia);
         Emparejar("parC");
         Emparejar("punto y coma");
         C();
@@ -482,10 +493,13 @@ public class Sintactico {
                     throw new ParserException(ErrorSemantico(aux.nombre,"Se esta intentando modificar un caracter a un arreglo de enteros",ultimoToken.pos));
                 }else{
                     aux.updatevalue(aux.indexsel,ultimoToken.secuencia);
+                    
+                    semantico.arreglosInterfaz("Arreglo modificado en "+ultimoToken.pos);
                 }
             }else{
                 aux.value= ultimoToken.secuencia;
                 aux.tipo= "char";
+                semantico.variablesInterfaz("Variable de tipo char agregada en:"+ultimoToken.pos);
             }
         }else {
             Variables otro2 = new Variables();
@@ -498,12 +512,14 @@ public class Sintactico {
             if(otro2.valorsel != -1){
                 if(aux.isArreglo){
                     String res= aux.updatevalue(aux.indexsel,String.valueOf(otro2.valorsel));
+                    semantico.arreglosInterfaz("Arreglo modificado en "+ultimoToken.pos);
                     if(!res.equals("")){
                         throw new ParserException(ErrorSemantico(aux.nombre,res,aux.pos));
                     }
                 }else{
                     aux.value= String.valueOf(otro2.valorsel);
                     aux.tipo= "int";
+                    semantico.variablesInterfaz("Variable de tipo char agregada en:"+ultimoToken.pos);
                 }
             }else{
                 String response;
@@ -528,10 +544,13 @@ public class Sintactico {
             }
         }
         Emparejar("punto y coma");
+        
         String res = semantico.saltaArregloAdd(aux);
         if(!res.equals("")){
             throw new ParserException(ErrorSemantico(aux.nombre,res,aux.pos));
         }
+        
+        semantico.printtabla();
         C();
     }
 
@@ -644,6 +663,7 @@ public class Sintactico {
             if(token.secuencia.equals("arreglos")){
                Emparejar("arreglos");
                Arreg();
+               semantico.arreglosInterfaz("Arreglo agregado en "+ultimoToken.pos);
             }
         }
     }
@@ -941,7 +961,8 @@ public class Sintactico {
     }
 
     public void funcionEscribe(String cadena) {
-        Interfaz.textSalida.append("\n funcion escribe dice: "+ cadena);
+        Interfaz.ic.cons.append("\n funcion escribe dice: "+ cadena);
+       
     }
 
 

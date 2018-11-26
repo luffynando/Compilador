@@ -13,6 +13,7 @@ public class Interfaz extends JFrame{
     String src, automata, reservadas;
     Boolean automataready= false;
     AFDVault automa = null;
+    public static InterfazCompilado ic;
 
     public Interfaz(){
         this.setTitle("Analizador");
@@ -118,6 +119,10 @@ public class Interfaz extends JFrame{
 					    }
                         textSalida.append("\n-------------------------------------------------");
                         Sintactico analsin = new Sintactico(automa);
+                        if(ic!=null)
+                        	ic.dispose();
+                        ic= new InterfazCompilado();
+                        
                         analsin.Iniciar();
                         textSalida.append("\nTodo bien");
                     }catch (ParserException ex){

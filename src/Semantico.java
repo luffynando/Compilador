@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 public class Semantico {
@@ -90,4 +91,80 @@ public class Semantico {
             }
         }
     }
+    
+    
+    public ArrayList<String[]> getConstantes() {
+    	ArrayList<String[]> aux = new ArrayList<>();
+    	for(Variables lista: tabla) {
+    		if(lista.isConstante){
+    			String[] row= {lista.nombre, lista.tipo, lista.value};
+    			aux.add(row);
+    		}
+    	}
+    	return aux;
+    }
+    
+    
+    public ArrayList<String[]> getArreglos() {
+    	ArrayList<String[]> aux = new ArrayList<>();
+    	for(Variables lista: tabla) {
+    		if(lista.isArreglo){
+    			String[] row= {lista.nombre, lista.tipo, lista.printvalues()};
+    			aux.add(row);
+    		}
+    	}
+    	return aux;
+    }
+    
+    public ArrayList<String[]> getVariables() {
+    	ArrayList<String[]> aux = new ArrayList<>();
+    	for(Variables lista: tabla) {
+    		if(lista.isArreglo==false && lista.isConstante==false){
+    			String[] row= {lista.nombre, lista.tipo, lista.value};
+    			aux.add(row);
+    		}
+    	}
+    	return aux;
+    }
+    
+    
+    public void constantesInterfaz() {
+    	ArrayList<String[]> aux;
+    	aux= this.getConstantes();
+    	String[][] valores= new String[aux.size()][3];
+    	
+    	for(int i=0;i<aux.size();i++) {
+    		valores[i][0]=aux.get(i)[0];
+    		valores[i][1]=aux.get(i)[1];
+    		valores[i][2]=aux.get(i)[2];
+    	}
+    	 Interfaz.ic.agregaTabla(valores, "Constantes");
+    }
+    
+    public void arreglosInterfaz(String msg) {
+    	ArrayList<String[]> aux;
+    	aux= this.getArreglos();
+    	String[][] valores= new String[aux.size()][3];
+    	
+    	for(int i=0;i<aux.size();i++) {
+    		valores[i][0]=aux.get(i)[0];
+    		valores[i][1]=aux.get(i)[1];
+    		valores[i][2]=aux.get(i)[2];
+    	}
+    	 Interfaz.ic.agregaTabla(valores, msg);
+   }
+    
+
+    public void variablesInterfaz(String msg) {
+    	ArrayList<String[]> aux;
+    	aux= this.getArreglos();
+    	String[][] valores= new String[aux.size()][3];
+    	
+    	for(int i=0;i<aux.size();i++) {
+    		valores[i][0]=aux.get(i)[0];
+    		valores[i][1]=aux.get(i)[1];
+    		valores[i][2]=aux.get(i)[2];
+    	}
+    	 Interfaz.ic.agregaTabla(valores, msg);
+   }
 }
