@@ -107,13 +107,17 @@ public class Sintactico {
             if (otra == null){
                 throw new ParserException(ErrorSemantico(ultimoToken.secuencia,"La variable no ha sido inicializada",ultimoToken.pos));
             }
+            System.out.println(otra.tipo);
             T(otra);
             //Verificar arreglo
             if(otra.valorsel != -1){
                 aux.value = String.valueOf(otra.valorsel);
+                aux.tipo=otra.tipo;
+
             }else{
                 if(!otra.charsel.equals("")){
                     aux.value = otra.charsel;
+                    aux.tipo=otra.tipo;
                 }else{
                     if(otra.isArreglo){
                         throw new ParserException(ErrorSemantico(otra.nombre,"No se puede asignar un arreglo",ultimoToken.pos));
@@ -146,6 +150,7 @@ public class Sintactico {
             Variables otro = new Variables();
             Lim(otro);
             P(otro);
+            System.out.println(otro.valorsel);
             if(otro.valorsel>=aux.length()){
                 throw new ParserException(ErrorSemantico(aux.nombre,"Indice fuera del rango del arreglo",ultimoToken.pos));
             }
@@ -154,8 +159,9 @@ public class Sintactico {
             }else{
                 if(aux.tipo.equals("char")){
                     aux.charsel = aux.getValuebyIndex(otro.valorsel);
+                }else {
+                    aux.valorsel = Integer.parseInt(aux.getValuebyIndex(otro.valorsel));
                 }
-                aux.valorsel = Integer.parseInt(aux.getValuebyIndex(otro.valorsel));
             }
             Emparejar("CuadC");
         }else{
@@ -459,6 +465,9 @@ public class Sintactico {
         V(otro);
         if(aux.isArreglo){
             if (otro.valorsel != -1){
+                if(otro.valorsel>= aux.length()){
+                    throw new ParserException(ErrorSemantico(aux.nombre, "El index seleccionado esta fuera del rango del arreglo", aux.pos));
+                }
                 aux.indexsel = otro.valorsel;
             }else{
                 throw new ParserException(ErrorSemantico(aux.nombre,"Se esta intentando reasignar un arreglo definido",aux.pos));
@@ -532,6 +541,7 @@ public class Sintactico {
             //Espera el indice selecionado
             Variables conseguir= new Variables();
             Lim(conseguir);
+            P(conseguir);
             if(conseguir.valorsel != -1){
                 aux.valorsel = conseguir.valorsel;
             }else {
