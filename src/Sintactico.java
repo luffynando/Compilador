@@ -493,17 +493,102 @@ public class Sintactico {
     }
 
     public void M()throws ParserException{
+    	boolean band=false;
     	String aux= new String();
         Emparejar("lee");
         Emparejar("parA");
         Emparejar("identificador");
+        Variables var= semantico.getByName(ultimoToken.secuencia);
+        if(var!=null  )
+        	if(var.isConstante)
+        		throw new ParserException(ErrorSemantico(ultimoToken.secuencia,"es constante", ultimoToken.pos));
         aux=JOptionPane.showInputDialog("de valor para la variable "+ultimoToken.secuencia);
+        int value=-1;
+        if(var!=null) {// si es variable ya existente
+        	
+        	if(var.isArreglo==false) {
+        		try {
+        			value= Integer.parseInt(aux);
+        		}catch(Exception e) {
+        			if(aux.toCharArray().length!=3 && aux.toCharArray()[0]!='\'' && aux.toCharArray()[2]!='\'')
+            			throw new ParserException(ErrorSemantico(aux,"solo se aceptan caracteres o enteros ",ultimoToken.pos) );
+        			else if(aux.toCharArray().length==3 && aux.toCharArray()[0]=='\'' && aux.toCharArray()[2]=='\'' ){
+        				var.value=aux;
+        				var.tipo="caracter";
+        			}	
+        			band=true;
+        		}
+        		if (band==false) {
+        			var.value=Integer.toString(value);
+            		var.tipo="entero";
+        		}
+        		
+        	}else {
+        		//si es arreglo
+        		  Variables otro = new Variables();
+        	        V(otro);
+        	        if(var.isArreglo){
+        	            if (otro.valorsel != -1){
+        	                if(otro.valorsel>= var.length()){
+        	                    throw new ParserException(ErrorSemantico(var.nombre, "El index seleccionado esta fuera del rango del arreglo", var.pos));
+        	                }
+        	                var.indexsel = otro.valorsel;
+        	            }else{
+        	                throw new ParserException(ErrorSemantico(var.nombre,"Se esta intentando reasignar un arreglo definido",var.pos));
+        	            }
+        	        }
+        	        try {
+        	        	int valor=Integer.parseInt(aux.trim());
+        	        	if(semantico.getByName(var.nombre).printvalues().startsWith("\'")==false)
+        	        		var.updatevalue(otro.valorsel, Integer.toString(valor));
+        	        	else
+        	        		throw new ParserException(ErrorSemantico(aux,"se esperaba entero ", ultimoToken.pos));
+        	        }catch(Exception e) {
+        	        	if(semantico.getByName(var.nombre).printvalues().startsWith("\'")==false)
+        	        		throw new ParserException(ErrorSemantico(aux,"se esperaba entero ", ultimoToken.pos));
+        	        	if(aux.toCharArray().length!=3 && aux.toCharArray()[0]!='\'' && aux.toCharArray()[2]!='\'' )
+                			throw new ParserException(ErrorSemantico(aux,"se esperaba caracter ",ultimoToken.pos) );
+            			else if(aux.toCharArray().length==3 && aux.toCharArray()[0]=='\'' && aux.toCharArray()[2]=='\''  ){
+            				var.updatevalue(otro.valorsel, aux);
+            			}else {
+            				throw new ParserException(ErrorSemantico(aux,"se esperaba entero o caracter", ultimoToken.pos));
+            			}
+        	        		 
+        	        }
+        	        
+        	}
+        	semantico.printtabla();
+        		
+        }else {
+        	// si la variable no existe
+        	var= new Variables();
+        	var.nombre=ultimoToken.secuencia;
+        	try {
+    			value= Integer.parseInt(aux);
+    		}catch(Exception e) {
+    			if(aux.toCharArray().length!=3 && aux.toCharArray()[0]!='\'' && aux.toCharArray()[2]!='\'' )
+        			throw new ParserException(ErrorSemantico(aux,"solo se aceptan caracteres o enteros ",ultimoToken.pos) );
+    			else if(aux.toCharArray().length==3 && aux.toCharArray()[0]=='\'' && aux.toCharArray()[2]=='\''  ){
+    				var.value=aux;
+    				var.tipo="caracter";
+    			}	
+    			band=true;
+    		}
+        	if(band==false) {
+        		var.value=Integer.toString(value);
+        		var.tipo="entero";
+        	}
+        	semantico.saltaArregloAdd(var);
+        	semantico.printtabla();
+        }
+        
         Emparejar("parC");
         Emparejar("punto y coma");
         C();
     }
 
     public void N()throws ParserException{
+    	boolean banderaEsArreglo=false;
         Emparejar("identificador");
         Variables aux = semantico.getByName(ultimoToken.secuencia);
         if(aux == null){
@@ -524,6 +609,8 @@ public class Sintactico {
             }else{
                 throw new ParserException(ErrorSemantico(aux.nombre,"Se esta intentando reasignar un arreglo definido",aux.pos));
             }
+           
+            
         }
         //System.out.println(aux.indexsel);
         Emparejar("asignacion");
@@ -534,13 +621,13 @@ public class Sintactico {
                     throw new ParserException(ErrorSemantico(aux.nombre,"Se esta intentando modificar un caracter a un arreglo de enteros",ultimoToken.pos));
                 }else{
                     aux.updatevalue(aux.indexsel,ultimoToken.secuencia);
-                    
-                    semantico.arreglosInterfaz("Arreglo modificado en "+ultimoToken.pos);
+                    banderaEsArreglo=true;
+                    semantico.arreglosInterfaz("Arreglo de tipo char modificado en linea "+aux.pos);
                 }
             }else{
                 aux.value= ultimoToken.secuencia;
                 aux.tipo= "char";
-                //semantico.variablesInterfaz("Variable de tipo char agregada en:"+ultimoToken.pos);
+               
             }
         }else {
             Variables otro2 = new Variables();
@@ -551,16 +638,18 @@ public class Sintactico {
             P(otro2);
             //int -1
             if(otro2.valorsel != -1){
+            
                 if(aux.isArreglo){
+                	banderaEsArreglo=true;
                     String res= aux.updatevalue(aux.indexsel,String.valueOf(otro2.valorsel));
-                   // semantico.arreglosInterfaz("Arreglo modificado en "+ultimoToken.pos);
+                   semantico.arreglosInterfaz("Arreglo modificado en "+aux.pos);
                     if(!res.equals("")){
                         throw new ParserException(ErrorSemantico(aux.nombre,res,aux.pos));
                     }
                 }else{
                     aux.value= String.valueOf(otro2.valorsel);
                     aux.tipo= "int";
-                    //semantico.variablesInterfaz("Variable de tipo char agregada en:"+ultimoToken.pos);
+                    
                 }
             }else{
                 String response;
@@ -570,7 +659,9 @@ public class Sintactico {
                     response = otro2.value;
                 }
                 if(aux.isArreglo){
+                	banderaEsArreglo=true;
                     String respuesta = aux.updatevalue(aux.indexsel,response);
+                    semantico.arreglosInterfaz("Arreglo modificado en "+aux.pos);
                     if(!respuesta.equals("")){
                         throw new ParserException(ErrorSemantico(aux.nombre,respuesta,aux.pos));
                     }
@@ -587,6 +678,8 @@ public class Sintactico {
         Emparejar("punto y coma");
         
         String res = semantico.saltaArregloAdd(aux);
+        if(res.equals("") && banderaEsArreglo==false)
+        	semantico.variablesInterfaz("nueva variable agregada en linea:"+aux.pos);
         if(!res.equals("")){
             throw new ParserException(ErrorSemantico(aux.nombre,res,aux.pos));
         }
@@ -594,7 +687,6 @@ public class Sintactico {
         semantico.printtabla();
         C();
     }
-
     public void V(Variables aux)throws ParserException{
         if (token.token.equals("CuadA")){
             Emparejar("CuadA");
@@ -1073,13 +1165,17 @@ public class Sintactico {
 
 
     public String Error(String lexema, String esperado,int linea){
+    	JOptionPane.showMessageDialog(null, "Error Sintactico: Encontrado lexema "+lexema+" se esperaba "+ esperado+ " en linea: "+String.valueOf(linea), "Exception", JOptionPane.ERROR_MESSAGE);
+    	Interfaz.ic.dispose();
         return "Error Sintactico: Encontrado lexema "+lexema+" se esperaba "+ esperado+ " en linea: "+String.valueOf(linea);
     }
 
     public static String ErrorSemantico(String lexema, String esperado,int linea){
+    	
+    	JOptionPane.showMessageDialog(null, "Error Semantico: "+lexema+" "+esperado+" en linea "+String.valueOf(linea), "Exception", JOptionPane.ERROR_MESSAGE);
+    	Interfaz.ic.dispose();
         return "Error Semantico: "+lexema+" "+esperado+" en linea "+String.valueOf(linea);
     }
-
     public void funcionEscribe(String cadena) {
         Interfaz.ic.cons.append("\n funcion escribe dice: "+ cadena);
     }
