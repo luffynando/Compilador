@@ -231,6 +231,7 @@ public class Sintactico {
         Lim(otro);
         if(otro.valorsel != -1){
             aux.value = String.valueOf(otro.valorsel);
+            //semantico.variablesInterfaz("variable modificado en linea: "+ultimoToken.pos);
         }else {
             if(!otro.charsel.equals("")){
                 throw new ParserException(ErrorSemantico(aux.nombre,"Se esperaba un entero pero se recibio un caracter",aux.pos));
@@ -245,6 +246,7 @@ public class Sintactico {
         if(!res.equals("")){
             throw new ParserException(ErrorSemantico("",res,aux.pos));
         }
+        semantico.variablesInterfaz("variable agregada en linea: "+ultimoToken.pos);
         int inicio= Integer.parseInt(aux.value);
         Emparejar("hasta");
         Variables limite = new Variables();
@@ -301,6 +303,7 @@ public class Sintactico {
                         }else{
                             auxilmas.value= (String.valueOf(i));
                             semantico.intentaagregar(auxilmas);
+                           //semantico.variablesInterfaz("variable modificada en linea: "+ultimoToken.pos);
                         }
                         estadoActual = (LinkedList<Tokens>) auxs.clone();
                         token= estadoActual.removeFirst();
@@ -315,6 +318,7 @@ public class Sintactico {
                         }else{
                             auxilmas.value= (String.valueOf(i));
                             semantico.intentaagregar(auxilmas);
+                            //semantico.variablesInterfaz("variable modificada en linea: "+ultimoToken.pos);
                         }
                         estadoActual = (LinkedList<Tokens>) auxs.clone();
                         token= estadoActual.removeFirst();
@@ -515,6 +519,7 @@ public class Sintactico {
                     }else{
                         var.value=aux;
                         var.tipo="char";
+                        semantico.variablesInterfaz("variable modificada en linea "+ultimoToken.pos);
                     }
                     band=true;
         			/*if(aux.toCharArray().length!=3 && aux.toCharArray()[0]!='\'' && aux.toCharArray()[2]!='\'')
@@ -527,6 +532,7 @@ public class Sintactico {
         		if (band==false) {
         			var.value=Integer.toString(value);
             		var.tipo="int";
+            		semantico.variablesInterfaz("variable modificada en linea "+ultimoToken.pos);
         		}
         		
         	}else {
@@ -545,8 +551,11 @@ public class Sintactico {
         	        }
         	        try {
         	        	int valor=Integer.parseInt(aux.trim());
-        	        	if(semantico.getByName(var.nombre).printvalues().startsWith("\'")==false)
+        	        	if(semantico.getByName(var.nombre).printvalues().startsWith("\'")==false) {
         	        		var.updatevalue(otro.valorsel, Integer.toString(valor));
+        	        		semantico.arreglosInterfaz("arreglo int modificado en linea: "+ultimoToken.pos);
+        	        	}
+        	        		
         	        	else
         	        		throw new ParserException(ErrorSemantico(aux,"se esperaba entero ", ultimoToken.pos));
         	        }catch(Exception e) {
@@ -556,6 +565,7 @@ public class Sintactico {
                 			throw new ParserException(ErrorSemantico(aux,"se esperaba caracter ",ultimoToken.pos) );
             			else if(aux.toCharArray().length==3 && aux.toCharArray()[0]=='\'' && aux.toCharArray()[2]=='\''  ){
             				var.updatevalue(otro.valorsel, aux);
+            				semantico.arreglosInterfaz("arreglo char modificado en linea: "+ultimoToken.pos);
             			}else {
             				throw new ParserException(ErrorSemantico(aux,"se esperaba entero o caracter", ultimoToken.pos));
             			}
