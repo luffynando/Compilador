@@ -59,6 +59,10 @@ public class InterfazCompilado extends JFrame
 	       
 
 	}
+
+	public void setTitulo(String title){
+		this.setTitle(title);
+	}
 	
 	
 	public  void agregaTabla(String[][] datos, String title) {

@@ -35,6 +35,7 @@ public class Sintactico {
         Emparejar("programa");
         Emparejar("identificador");
         semantico.nombrePrograma = ultimoToken.secuencia;
+        Interfaz.ic.setTitulo(semantico.nombrePrograma);
         B();
         //semantico.printtabla();
         Emparejar("inicio");
