@@ -157,7 +157,7 @@ public class Semantico {
 
     public void variablesInterfaz(String msg) {
     	ArrayList<String[]> aux;
-    	aux= this.getArreglos();
+    	aux= this.getVariables();
     	String[][] valores= new String[aux.size()][3];
     	
     	for(int i=0;i<aux.size();i++) {
