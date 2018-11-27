@@ -510,13 +510,19 @@ public class Sintactico {
         		try {
         			value= Integer.parseInt(aux);
         		}catch(Exception e) {
-        			if(aux.toCharArray().length!=3 && aux.toCharArray()[0]!='\'' && aux.toCharArray()[2]!='\'')
+        		    if(aux.length() !=3 && !aux.startsWith("'") && !aux.endsWith("'")){
+                        throw new ParserException(ErrorSemantico(aux,"solo se aceptan caracteres o enteros ",ultimoToken.pos) );
+                    }else{
+                        var.value=aux;
+                        var.tipo="char";
+                    }
+                    band=true;
+        			/*if(aux.toCharArray().length!=3 && aux.toCharArray()[0]!='\'' && aux.toCharArray()[2]!='\'')
             			throw new ParserException(ErrorSemantico(aux,"solo se aceptan caracteres o enteros ",ultimoToken.pos) );
         			else if(aux.toCharArray().length==3 && aux.toCharArray()[0]=='\'' && aux.toCharArray()[2]=='\'' ){
         				var.value=aux;
         				var.tipo="char";
-        			}	
-        			band=true;
+        			}*/
         		}
         		if (band==false) {
         			var.value=Integer.toString(value);
