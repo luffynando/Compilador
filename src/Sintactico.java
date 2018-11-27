@@ -274,6 +274,7 @@ public class Sintactico {
                 first.indice = 0;
                 getinstruccionesparas(first);
                 first.AddInstruccion(token);
+                first.printInstrucciones();
                 controlPara.add(first);
                 estadoActual = first.instrucciones;
                 isfirst = true;
@@ -326,12 +327,12 @@ public class Sintactico {
                 controlPara.clear();
                 indiceactual = 0;
             }else{
-                //System.out.println("current token");
-                //System.out.println(token.secuencia);
-                //System.out.println("Current estado: ");
-                //imprimeestados(estadoActual);
-                //System.out.println("Estado Prev: ");
-                //imprimeestados(estadoPrev);
+                System.out.println("current token");
+                System.out.println(token.secuencia);
+                System.out.println("Current estado: ");
+                imprimeestados(estadoActual);
+                System.out.println("Estado Prev: ");
+                imprimeestados(estadoPrev);
                 estadoActual= estadoPrev;
                 estadoActual.addLast(token);
                 indiceactual= indiceactual-1;
@@ -340,6 +341,7 @@ public class Sintactico {
             recorrerhastaelfin(false);
         }
         Emparejar("fin");
+        System.out.println(token.secuencia);
         C();
     }
 
@@ -1065,7 +1067,15 @@ public class Sintactico {
                 }
             }
             if(flag){
-                token=lexico.getToken();
+                if(ready){
+                    if(estadoActual.isEmpty()){
+                        throw new ParserException(ErrorSemantico("","Se esperaba fin",token.pos));
+                    }
+                    token= estadoActual.removeFirst();
+                }else{
+                    token=lexico.getToken();
+                }
+
             }
         }
     }
