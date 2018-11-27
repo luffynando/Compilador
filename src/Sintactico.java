@@ -1,4 +1,6 @@
-import java.util.ArrayList;
+
+import org.omg.Messaging.SYNC_WITH_TRANSPORT;
+
 import java.util.LinkedList;
 
 import javax.swing.JOptionPane;
@@ -8,19 +10,18 @@ public class Sintactico {
     private Tokens token;
     public static Semantico semantico;
     private Tokens ultimoToken;
-    private LinkedList<Tokens> estadoPrev;
     private LinkedList<Tokens> estadoActual;
-    private int indiceprev;
+    private LinkedList<Tokens> estadoPrev;
+    private LinkedList<ParasControl> controlPara;
     private int indiceactual;
     private boolean ready;
-    private boolean copy;
 
     public Sintactico(AFDVault lexico) {
         this.lexico = lexico;
         semantico= new Semantico();
-        estadoPrev = new LinkedList<>();
         estadoActual= new LinkedList<>();
-        copy= false;
+        controlPara = new LinkedList<>();
+        indiceactual = 0;
         ready= false;
     }
 
@@ -116,7 +117,7 @@ public class Sintactico {
             if (otra == null){
                 throw new ParserException(ErrorSemantico(ultimoToken.secuencia,"La variable no ha sido inicializada",ultimoToken.pos));
             }
-            System.out.println(otra.tipo);
+            //System.out.println(otra.tipo);
             T(otra);
             //Verificar arreglo
             if(otra.valorsel != -1){
@@ -241,6 +242,7 @@ public class Sintactico {
             }
             aux.value= otro.value;
         }
+        int ultimaposicion= ultimoToken.pos;
         String res= semantico.intentaagregar(aux);
         if(!res.equals("")){
             throw new ParserException(ErrorSemantico("",res,aux.pos));
@@ -266,46 +268,85 @@ public class Sintactico {
         Variables incremento=new Variables();
         simbolo= Indec(incremento);
         Emparejar("hacer");
+        boolean isfirst= false;
+        int previo = -1;
         //reglas para verificar un correcto for
         if(inicio != limitepara) {
-            copy = true;
-            C();
-            if (simbolo.equals("+")) {
-                inicio = inicio + incremento.valorsel;
-            } else {
-                inicio = inicio - incremento.valorsel;
+            if(controlPara.isEmpty()) {
+                ParasControl first = new ParasControl();
+                first.indice = 0;
+                getinstruccionesparas(first);
+                first.AddInstruccion(token);
+                controlPara.add(first);
+                estadoActual = first.instrucciones;
+                isfirst = true;
+            }else{
+                estadoPrev = estadoActual;
+                indiceactual= indiceactual+1;
+                ParasControl paraactual = getPara(indiceactual);
+                if(paraactual==null){
+                    throw new ParserException(ErrorSemantico("","Error al interpretar un ciclo para lo siento u.u",ultimoToken.pos));
+                }
+                //paraactual.AddInstruccion(token);
+                estadoActual= paraactual.instrucciones;
             }
-            estadoActual.add(token);
-            copy = false;
             ready = true;
-            if (!estadoActual.isEmpty()){
-                //indiceactual = 0;
+            if(!estadoActual.isEmpty()){
+                String nombrevar = aux.nombre;
                 LinkedList<Tokens> auxs=(LinkedList<Tokens>) estadoActual.clone();
                 if(simbolo.equals("+")){
                     for(int i=inicio; i<=limitepara; i=i+incremento.valorsel){
+                        Variables auxilmas= semantico.getByName(nombrevar);
+                        if(auxilmas.tipo.equals("char")){
+                            throw new ParserException(ErrorSemantico("","la variable de control fue modificada a caracter no se puede incrementar un caracter",ultimaposicion));
+                        }else{
+                            auxilmas.value= (String.valueOf(i));
+                            semantico.intentaagregar(auxilmas);
+                        }
                         estadoActual = (LinkedList<Tokens>) auxs.clone();
                         token= estadoActual.removeFirst();
-                        System.out.println(i);
+                        //System.out.println(i);
                         C();
                     }
                 }else{
                     for(int i= inicio;i>=limitepara; i=i-incremento.valorsel){
+                        Variables auxilmas= semantico.getByName(nombrevar);
+                        if(auxilmas.tipo.equals("char")){
+                            throw new ParserException(ErrorSemantico("","la variable de control fue modificada a caracter no se puede decrementar un caracter",ultimaposicion));
+                        }else{
+                            auxilmas.value= (String.valueOf(i));
+                            semantico.intentaagregar(auxilmas);
+                        }
                         estadoActual = (LinkedList<Tokens>) auxs.clone();
                         token= estadoActual.removeFirst();
-                        System.out.println(i);
+                        //System.out.println(i);
                         C();
                     }
                 }
-                System.out.println("Salio del ciclo");
             }
-            ready=false;
+            if(isfirst){
+                ready = false;
+                controlPara.clear();
+                indiceactual = 0;
+            }else{
+                System.out.println("current token");
+                System.out.println(token.secuencia);
+                System.out.println("Current estado: ");
+                imprimeestados(estadoActual);
+                System.out.println("Estado Prev: ");
+                imprimeestados(estadoPrev);
+                estadoActual= estadoPrev;
+                estadoActual.addLast(token);
+                indiceactual= indiceactual-1;
+            }
         }else{
             recorrerhastaelfin(false);
         }
         Emparejar("fin");
         C();
-
     }
+
+
 
     public String Indec(Variables aux)throws ParserException{
         Variables otro= new Variables();
@@ -749,13 +790,6 @@ public class Sintactico {
 
     public void Emparejar(String tok)throws ParserException{
         ultimoToken = token;
-        if(copy){
-            //System.out.println(token.secuencia);
-            estadoActual.add(token);
-        }
-        if(ready){
-            System.out.println(token.secuencia);
-        }
         if (token.token.equals("PR")){
             if (!token.secuencia.equals(tok)){
                 throw new ParserException(Error(token.secuencia,tok,token.pos));
@@ -879,7 +913,9 @@ public class Sintactico {
         }else{
             if(token.token.equals(tok)){
                 if(ready){
-                    token = estadoActual.removeFirst();
+                    if(!estadoActual.isEmpty()) {
+                        token = estadoActual.removeFirst();
+                    }
                 }else {
                     token = lexico.getToken();
                 }
@@ -946,8 +982,92 @@ public class Sintactico {
     }
 
     public boolean mismoTipo(Variables t1, Variables t2){
-        System.out.println(t1.tipo+" "+t2.tipo);
+        //System.out.println(t1.tipo+" "+t2.tipo);
         return t1.tipo.equals(t2.tipo);
+    }
+
+
+    public void getinstruccionesparas(ParasControl first)throws ParserException{
+        boolean flag=true;
+        int needfin= 0;
+        while(flag) {
+            if(token.token.equals("PR")){
+                if(token.secuencia.equals("para")){
+                    needfin++;
+                }
+                if(token.secuencia.equals("hacer")){
+                    first.AddInstruccion(token);
+                    token=lexico.getToken();
+                    ParasControl otro =  new ParasControl();
+                    otro.indice = first.indice +1;
+                    getinstruccionesparas(otro);
+                    otro.AddInstruccion(token);
+                    controlPara.add(otro);
+                    //otro.printInstrucciones();
+                }
+                if(token.secuencia.equals("si")){
+                    needfin++;
+                }
+                if(token.secuencia.equals("fin")){
+                    if(needfin == 0) {
+                        flag = false;
+                    }else{
+                        needfin--;
+                    }
+                }
+                if(flag) {
+                    first.AddInstruccion(token);
+                }
+            }else{
+                if(token.token.equals("FinFichero")){
+                    throw new ParserException(Error(token.secuencia,"Fin",token.pos));
+                }
+                first.AddInstruccion(token);
+            }
+            if(flag) {
+                token = lexico.getToken();
+            }
+        }
+    }
+
+    public void updateControlpara(int index)throws ParserException {
+        boolean match=false;
+        int matchindex= -1;
+        for(ParasControl para : controlPara){
+            if(para.indice == index){
+                matchindex = controlPara.indexOf(para);
+                match = true;
+            }
+        }
+        if(!match){
+            throw new ParserException("Upps hubo un problema interno contacte al desarrollador");
+        }
+        ParasControl aux = controlPara.get(matchindex);
+        aux.instrucciones = estadoActual;
+        controlPara.set(matchindex,aux);
+    }
+
+    public ParasControl getPara(int index){
+        boolean match=false;
+        int matchindex= -1;
+        for(ParasControl para : controlPara){
+            if(para.indice == index){
+                matchindex = controlPara.indexOf(para);
+                match = true;
+            }
+        }
+        if(!match){
+            return null;
+        }
+        return controlPara.get(matchindex);
+    }
+
+    public void imprimeestados(LinkedList<Tokens> current){
+        String res= "";
+        for(Tokens inst : current){
+            res=res.concat(inst.secuencia+"|");
+        }
+        System.out.println(res);
     }
     //Fin Metodos
 
@@ -962,8 +1082,9 @@ public class Sintactico {
 
     public void funcionEscribe(String cadena) {
         Interfaz.ic.cons.append("\n funcion escribe dice: "+ cadena);
-       
     }
+
+
 
 
 }
