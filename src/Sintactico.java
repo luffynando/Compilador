@@ -293,7 +293,7 @@ public class Sintactico {
                 String nombrevar = aux.nombre;
                 LinkedList<Tokens> auxs=(LinkedList<Tokens>) estadoActual.clone();
                 if(simbolo.equals("+")){
-                    for(int i=inicio; i<=limitepara; i=i+incremento.valorsel){
+                    for(int i=inicio; i<limitepara; i=i+incremento.valorsel){
                         Variables auxilmas= semantico.getByName(nombrevar);
                         if(auxilmas.tipo.equals("char")){
                             throw new ParserException(ErrorSemantico("","la variable de control fue modificada a caracter no se puede incrementar un caracter",ultimaposicion));
@@ -307,7 +307,7 @@ public class Sintactico {
                         C();
                     }
                 }else{
-                    for(int i= inicio;i>=limitepara; i=i-incremento.valorsel){
+                    for(int i= inicio;i>limitepara; i=i-incremento.valorsel){
                         Variables auxilmas= semantico.getByName(nombrevar);
                         if(auxilmas.tipo.equals("char")){
                             throw new ParserException(ErrorSemantico("","la variable de control fue modificada a caracter no se puede decrementar un caracter",ultimaposicion));

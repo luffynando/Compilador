@@ -1,4 +1,4 @@
-PROGRAMA BURBUJA
+PROGRAMA BURBUJAMEJORADA
     CONSTANTES
         NUM=23
         CAR='X'
@@ -11,12 +11,12 @@ INICIO
     escribe(DATOS[3]);
     escribe(DATOS[4]);
     PARA i=0 hasta DATOS.length PASO +1 HACER
-         LIM= DATOS.length-1;
+         LIM= i;
          PARA j=0 hasta LIM  PASO +1 HACER
-              SI(DATOS[j] > DATOS[j+1])entonces
-              	AUX= DATOS[j];
-                        DATOS[j]= DATOS[j+1];
-                        DATOS[j+1] = AUX;
+              SI(DATOS[i] < DATOS[j])entonces
+              	    AUX= DATOS[j];
+                    DATOS[j]= DATOS[i];
+                    DATOS[i] = AUX;
               FIN
          FIN
     FIN
