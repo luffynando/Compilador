@@ -1,3 +1,6 @@
+import LineNumber.LineNumberComponent;
+import LineNumber.LineNumberModel;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -6,14 +9,20 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
 
 public class Interfaz extends JFrame{
-    JTextArea textArea;
+    JTextArea textArea= new JTextArea();
     static JTextArea textSalida;
     String src, automata, reservadas;
     Boolean automataready= false;
     AFDVault automa = null;
     public static InterfazCompilado ic;
+    private LineNumberModelImpl lineNumberModel = new LineNumberModelImpl();
+    private LineNumberComponent lineNumberComponent = new LineNumberComponent(lineNumberModel);
+
 
     public Interfaz(){
         this.setTitle("Analizador");
@@ -149,9 +158,26 @@ public class Interfaz extends JFrame{
         gridBag.setConstraints (pestana, restricciones);
         textArea = new JTextArea();
         JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setRowHeaderView(lineNumberComponent);
+
         textArea.setEditable(true);
         pestana.add("Editor",scrollPane);
         this.add(pestana);
+        lineNumberComponent.setAlignment(LineNumberComponent.CENTER_ALIGNMENT);
+        textArea.getDocument().addDocumentListener(new DocumentListener(){
+            @Override
+            public void changedUpdate(DocumentEvent arg0) {
+                lineNumberComponent.adjustWidth();
+            }
+            @Override
+            public void insertUpdate(DocumentEvent arg0) {
+                lineNumberComponent.adjustWidth();
+            }
+            @Override
+            public void removeUpdate(DocumentEvent arg0) {
+                lineNumberComponent.adjustWidth();
+            }
+        });
 
         restricciones.weightx = 0.5;
         restricciones.weighty = 0.0;  // Restablecer a los valores predeterminados
@@ -297,6 +323,25 @@ public class Interfaz extends JFrame{
         }else {
             //textSalida.append("cerrado"+"\n");
             return new String();
+        }
+
+    }
+
+    private class LineNumberModelImpl implements LineNumberModel {
+        @Override
+
+        public int getNumberLines() {
+            return textArea.getLineCount();
+        }
+
+        @Override
+        public Rectangle getLineRect(int line) {
+            try{
+                return textArea.modelToView(textArea.getLineStartOffset(line));
+            }catch(BadLocationException e){
+                e.printStackTrace();
+                return new Rectangle();
+            }
         }
 
     }

@@ -1,6 +1,3 @@
-
-import org.omg.Messaging.SYNC_WITH_TRANSPORT;
-
 import java.util.LinkedList;
 
 import javax.swing.JOptionPane;
@@ -75,7 +72,7 @@ public class Sintactico {
                         J(); //Funcionando al 100 papu
                     break;
                 case "para":
-                        K();
+                        K(); //Funcionando al 100 papu
                     break;
                 case "si":
                         L(); //Funcionando al 100 papu
@@ -329,12 +326,12 @@ public class Sintactico {
                 controlPara.clear();
                 indiceactual = 0;
             }else{
-                System.out.println("current token");
-                System.out.println(token.secuencia);
-                System.out.println("Current estado: ");
-                imprimeestados(estadoActual);
-                System.out.println("Estado Prev: ");
-                imprimeestados(estadoPrev);
+                //System.out.println("current token");
+                //System.out.println(token.secuencia);
+                //System.out.println("Current estado: ");
+                //imprimeestados(estadoActual);
+                //System.out.println("Estado Prev: ");
+                //imprimeestados(estadoPrev);
                 estadoActual= estadoPrev;
                 estadoActual.addLast(token);
                 indiceactual= indiceactual-1;
@@ -514,13 +511,13 @@ public class Sintactico {
             			throw new ParserException(ErrorSemantico(aux,"solo se aceptan caracteres o enteros ",ultimoToken.pos) );
         			else if(aux.toCharArray().length==3 && aux.toCharArray()[0]=='\'' && aux.toCharArray()[2]=='\'' ){
         				var.value=aux;
-        				var.tipo="caracter";
+        				var.tipo="char";
         			}	
         			band=true;
         		}
         		if (band==false) {
         			var.value=Integer.toString(value);
-            		var.tipo="entero";
+            		var.tipo="int";
         		}
         		
         	}else {
@@ -570,13 +567,13 @@ public class Sintactico {
         			throw new ParserException(ErrorSemantico(aux,"solo se aceptan caracteres o enteros ",ultimoToken.pos) );
     			else if(aux.toCharArray().length==3 && aux.toCharArray()[0]=='\'' && aux.toCharArray()[2]=='\''  ){
     				var.value=aux;
-    				var.tipo="caracter";
+    				var.tipo="char";
     			}	
     			band=true;
     		}
         	if(band==false) {
         		var.value=Integer.toString(value);
-        		var.tipo="entero";
+        		var.tipo="int";
         	}
         	semantico.saltaArregloAdd(var);
         	semantico.printtabla();
@@ -1120,23 +1117,6 @@ public class Sintactico {
                 token = lexico.getToken();
             }
         }
-    }
-
-    public void updateControlpara(int index)throws ParserException {
-        boolean match=false;
-        int matchindex= -1;
-        for(ParasControl para : controlPara){
-            if(para.indice == index){
-                matchindex = controlPara.indexOf(para);
-                match = true;
-            }
-        }
-        if(!match){
-            throw new ParserException("Upps hubo un problema interno contacte al desarrollador");
-        }
-        ParasControl aux = controlPara.get(matchindex);
-        aux.instrucciones = estadoActual;
-        controlPara.set(matchindex,aux);
     }
 
     public ParasControl getPara(int index){
